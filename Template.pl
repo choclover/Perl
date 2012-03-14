@@ -1,4 +1,4 @@
-#version: 2011-11-20
+#version: 2012-03-14
 
 #!/usr/local/bin/perl -w
  
@@ -46,8 +46,8 @@ sub LOG_FILE {
   my @pathAry = split('/', $fileName);
   my $tmpPath = "";
   for (my $i=0; $i<scalar(@pathAry)-1; $i++) {
-      $tmpPath .= $pathAry[$i] . '/';   #D($tmpPath);
-      mkdir($tmpPath, 0111) if (! -d $tmpPath);
+  	$tmpPath .= $pathAry[$i] . '/';   #D($tmpPath);
+    mkdir($tmpPath, 0111) if (! -d $tmpPath);
   }
   if ($bAppData) {$fileName = " >> " . $fileName;  #append data
   } else         {$fileName = " > "  . $fileName;}
