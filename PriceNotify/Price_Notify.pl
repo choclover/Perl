@@ -1,4 +1,4 @@
-#version: 2011-8-22
+#version: 2012-03-14
 
 #!/usr/local/bin/perl -w
 use strict;
@@ -42,8 +42,8 @@ sub LOG_FILE {
   my @pathAry = split('/', $fileName);
   my $tmpPath = "";
   for (my $i=0; $i<scalar(@pathAry)-1; $i++) {
-      $tmpPath .= $pathAry[$i] . '/';   #D($tmpPath);
-      mkdir($tmpPath, 0111) if (! -d $tmpPath);
+  	$tmpPath .= $pathAry[$i] . '/';   #D($tmpPath);
+    mkdir($tmpPath, 0111) if (! -d $tmpPath);
   }
   if ($bAppData) {$fileName = " >> " . $fileName;  #append data
   } else         {$fileName = " > "  . $fileName;}
@@ -67,6 +67,7 @@ sub download_webpage {
 
   my $res = $userAgent->request($req);
   LOG_FILE($downloadFName, $FALSE, $res->as_string());
+  
 }#download_webpage
 
 sub send_request {
@@ -92,6 +93,7 @@ sub send_request {
     P("** Send reqeust got ERROR! **\nExiting...\n");
     exit 0;
   }
+  
 }#send_request
 
 sub trim($) {
@@ -170,6 +172,47 @@ sub getSymbolPriceTable {
   if ($bSpecificStkCode) {
     for (my $i=0; $i<scalar(@gStkCodeListAry); $i++) {
       my $key = sprintf("%d_%s%s", $i+1, getMarketType($gStkCodeListAry[$i]), $gStkCodeListAry[$i] );
+      $$refSymbolPriceTbl{$key} = "10|11|12";  #支撑|阻力|成本 (Yuan)
+    }
+    return;
+  }
+
+  my ($stocksPage, $downloadFName) = ("http://blog.csdn.net/choclover/article/details/7352863", "./Temp/WatchedStocks.htm");
+
+  unlink $downloadFName;  download_webpage($stocksPage, $downloadFName);
+  open(hFileHandle02, $downloadFName) || die "Cannot open file $downloadFName!";
+  my $bContentStart = $FALSE;
+  while (<hFileHandle02>) {
+    last if (m/<div class="share_buttons"/);
+    if (m/<div id="article_content"/) {
+    	$bContentStart = $TRUE;
+    }
+    next if ($FALSE==$bContentStart || not m/=&gt;/ig);
+				
+    my $aLine = trim($_);
+		D("aLine is: $aLine");
+		next if ($aLine=~m/^#/ || $aLine=~m/^<p>#/);
+		
+    $aLine =~ s/\s+//ig;
+    my @stockCodeAry  = ($aLine =~ m/\&quot;(\d+_s[hz]\d{6})/ig);
+    my @stockLimitAry = ($aLine =~ m/\&quot;([\d\s\.,]+\|[\d\s\.,]+\|[\d\s\.,]+)/ig); 
+    D("stockCodeAry is:", @stockCodeAry); D("stockLimitAry is:", @stockLimitAry);
+    for (my $i=0; $i<scalar(@stockCodeAry); $i++) {
+      $$refSymbolPriceTbl{$stockCodeAry[$i]} = $stockLimitAry[$i];
+    }
+
+  }
+  
+  close(hFileHandle02);
+  D(keys %$refSymbolPriceTbl);  D(values %$refSymbolPriceTbl);
+}
+
+sub getSymbolPriceTable_old {
+  my ($refSymbolPriceTbl) = @_;
+
+  if ($bSpecificStkCode) {
+    for (my $i=0; $i<scalar(@gStkCodeListAry); $i++) {
+      my $key = sprintf("%d_%s%s", $i+1, getMarketType($gStkCodeListAry[$i]), $gStkCodeListAry[$i] );
       $$refSymbolPriceTbl{$key} = "10|11|12";
     }
     return;
@@ -233,6 +276,7 @@ sub InstantPriceInfo {
 
       #($lowerLimit, $higherLimit) = ($symbolPriceTbl{$symbolAry[$i]}=~m/(.*)\|(.*)/ig);  #D($higherLimit, $lowerLimit);
     }
+    D("Target URL is: ", $url);
     download_webpage($url, $downloadFName);
 
     $latestTime = "";

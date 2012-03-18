@@ -1,7 +1,7 @@
-#version: 2011-2-15
+#version: 2012-03-14
 
 #!/usr/local/bin/perl -w
-
+ 
 use strict;
 #use cwd;
 use diagnostics;
@@ -24,6 +24,7 @@ my ($TRUE, $FALSE, $SUCCESS, $FAILED) = (1,0,1,0);
 my $osVersion = "";
 
 my $NEWLINE = "\r\n";
+
 #*****************************AUXILIARY  FUNCTIONS****************************#
 sub DEBUG_INFO {
   return if (!$bDEBUG);
@@ -43,8 +44,8 @@ sub LOG_FILE {
   my @pathAry = split('/', $fileName);
   my $tmpPath = "";
   for (my $i=0; $i<scalar(@pathAry)-1; $i++) {
-      $tmpPath .= $pathAry[$i] . '/';   #D($tmpPath);
-      mkdir($tmpPath, 0111) if (! -d $tmpPath);
+  	$tmpPath .= $pathAry[$i] . '/';   #D($tmpPath);
+    mkdir($tmpPath, 0111) if (! -d $tmpPath);
   }
   if ($bAppData) {$fileName = " >> " . $fileName;  #append data
   } else         {$fileName = " > "  . $fileName;}
@@ -103,15 +104,15 @@ sub send_request {
 }#send_request
 
 sub trim($) {
-    my $string = shift;
-    $string =~ s/^\s+//;  $string =~ s/\s+$//;
-    return $string;
+  my $string = shift;
+  $string =~ s/^\s+//;  $string =~ s/\s+$//;
+  return $string;
 }
 
 sub isEmptyStr {
-    my ($result, $str) = (0, @_);
-    $result = 1 if (!defined($str) || $str eq "" || $str=~m/^\s+$/ig);
-    return $result;
+  my ($result, $str) = (0, @_);
+  $result = 1 if (!defined($str) || $str eq "" || $str=~m/^\s+$/ig);
+  return $result;
 }
 
 sub parse_args {
@@ -123,7 +124,8 @@ sub parse_args {
 
     }
   }
-  if (defined $^O) {$osVersion =  $^O;} else {$osVersion = "win32"; }  D("osVersion is: $osVersion");
+  if (defined $^O) {$osVersion =  $^O;} else {$osVersion = "win32"; }  
+  P("osVersion is: $osVersion");
 }
 
 sub backupFile {
@@ -141,6 +143,27 @@ sub backupFile {
     } while (-e $newFName);
     rename($oldFName, $newFName);
   }
+}
+
+sub isWindowsArch {
+  return ($osVersion =~ /win32/i);
+}
+sub isCygwinArch {
+  return ($osVersion =~ /msys|cygwin/i);
+}
+
+sub runSysCmd {
+  my ($cmdStr) = @_;
+  D("\nCommand is: $cmdStr");
+  my $result = 0;
+  $result = system($cmdStr) if (!$bDEBUG);
+  P("Run command returns error") if ($result != 0);
+  return $result;
+}
+
+sub getDate {
+  my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time());
+  return sprintf("%04d-%02d-%02d", $year+1900, $mon+1, $mday);
 }
 
 my $notifCnt = 0;
@@ -165,13 +188,12 @@ sub showAsyncMsgBox {
     exit 1;
   } else {  D("THE PARENT Thread\n");  }
 }
+
 ###############################################################################
 sub main {
   print_usage();
-  my $option = <STDIN>;    chomp $option;
-  D("option is $option") ; 
-  
-  $option = '' if (!defined $option);
+  my $option = <STDIN>;    
+  D("option is $option") ;   $option = '' if (!defined $option);
   if ('1' eq $option) {
     Test01();
   } else {
@@ -214,3 +236,4 @@ if (1) {
 } else {
   Test();
 }
+

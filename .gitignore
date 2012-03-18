@@ -1,9 +1,7 @@
 
-.svn
-*/.svn
-.gitignore
-*/.gitignore
-/FinanceDataAnalyzer/originPriceData
-Temp/*
-Temp*
-
+*
+!MP3Converter/
+!PriceNotify/
+!caosir/
+!Template.pl
+!.gitignore
