@@ -168,7 +168,9 @@ sub showAsyncMsgBox {
 ###############################################################################
 sub main {
   print_usage();
-  my $option = <STDIN>;    
+  my $option = <STDIN>;    chomp $option;
+  D("option is $option") ; 
+  
   $option = '' if (!defined $option);
   if ('1' eq $option) {
     Test01();
