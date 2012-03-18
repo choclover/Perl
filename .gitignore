@@ -1,0 +1,9 @@
+
+.svn
+*/.svn
+.gitignore
+*/.gitignore
+/FinanceDataAnalyzer/originPriceData
+Temp/*
+Temp*
+
