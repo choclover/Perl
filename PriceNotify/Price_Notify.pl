@@ -1,4 +1,4 @@
-#version: 2012-03-14
+#version: 2012-06-26
 
 #!/usr/local/bin/perl -w
 use strict;
@@ -25,11 +25,13 @@ my @gStkCodeListAry = ();
 
 #*****************************AUXILIARY  FUNCTIONS****************************#
 sub DEBUG_INFO {
-  return if (!$bDEBUG);
-  if (defined(@_)) {
-    print "@_\n";
-  } else {
-    print "Not Defined!\n";
+  return if (not $bDEBUG);
+  foreach (@_) {
+    if (not defined $_) {
+      print "Not Defined!\n";
+    } else {
+      print "$_\n";
+    }
   }
 }
 sub D {DEBUG_INFO(@_);}
@@ -278,6 +280,7 @@ sub InstantPriceInfo {
     }
     D("Target URL is: ", $url);
     download_webpage($url, $downloadFName);
+    D("Over dowloading $url");
 
     $latestTime = "";
     open(hFileHandle01, $downloadFName) || die "Cannot open file $downloadFName!";
@@ -286,9 +289,9 @@ sub InstantPriceInfo {
       die "Fail to download $url!\n" if (/500.+Internal Server Error/);
       next if (!m/var hq_str_/ig);
 
-      my $tmpStr = $_;
+      my $tmpStr = $_;  D($_);
       ($code, $name, $openP, $lastP, $latestP, $highestP, $lowestP, $currTime)
-        = $tmpStr =~ m/var hq_str_(\S+)=\"([^,]+),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),.*,(\d+:\d{2}:\d{2})\"/i;
+        = $tmpStr =~ m/var hq_str_(\S+)=\"([^,]+),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),.*,(\d+:\d{2}:\d{2})/i;
       D($code, $latestP, $lastP, $openP, $highestP, $lowestP, $currTime);
 
       #P($currTime, $prevTime);
