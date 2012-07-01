@@ -1,4 +1,4 @@
-#version: 2012-03-14
+#version: 2012-03-30
 
 #!/usr/local/bin/perl -w
  
@@ -45,7 +45,7 @@ sub LOG_FILE {
   my $tmpPath = "";
   for (my $i=0; $i<scalar(@pathAry)-1; $i++) {
   	$tmpPath .= $pathAry[$i] . '/';   #D($tmpPath);
-    mkdir($tmpPath, 0111) if (! -d $tmpPath);
+    mkdir($tmpPath, 0755) if (! -d $tmpPath);
   }
   if ($bAppData) {$fileName = " >> " . $fileName;  #append data
   } else         {$fileName = " > "  . $fileName;}
@@ -192,8 +192,8 @@ sub showAsyncMsgBox {
 ###############################################################################
 sub main {
   print_usage();
-  my $option = <STDIN>;    D("option is $option") ;   
-  $option = -1 if (!defined $option);
+  my $option = <STDIN>;    
+  $option = '' if (!defined $option);
   if (1 == $option) {
     Test01();
   } else {
@@ -202,14 +202,33 @@ sub main {
 }
 
 sub Test01 {
-  my ($url, $fileName) = ("http://www.csdn.net/", "Temp.txt");
-
+	my ($auctionId, $lotId) = (260, 0);
+  my ($url, $fileName) = ("http://mycatalog.antiquorum.com/lotsprice.html?auctionid=$auctionId", 
+                          "Temp.txt");
+	my @lotIdsAry = ();
+	
   download_webpage($url, $fileName);
   open(hFileHandle, $fileName) || die "Cannot open file $fileName!";
   while (<hFileHandle>) {
     die "Fail to download $url!\n" if (/500.+Internal Server Error/);
+    next if (not /javascript:opendetail\(/);  #read till to this line
+    D($_);
+    
+    ($lotId) = /javascript:opendetail\((\d+),\s*\d+\)/ig;  D($lotId);
+    push(@lotIdsAry, $lotId);
   }
   close(hFileHandle);
+  D(sort {$a<=>$b} @lotIdsAry) if ($bDEBUG);
+  
+  foreach $lotId (sort {$a<=>$b} @lotIdsAry) {
+  	$url = "http://mycatalog.antiquorum.com/catalog.html?action=load&lotid=$lotId&auctionid=$auctionId";
+  	$fileName = "Auction_$auctionId/lot_$lotId.html";
+  	if (not -e $fileName) {
+  		P("Downloading $fileName");
+  		download_webpage($url, $fileName);
+  	}
+  	
+  }
 }
 
 sub Test02 {
@@ -236,4 +255,3 @@ if (1) {
 } else {
   Test();
 }
-

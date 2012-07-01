@@ -1,7 +1,17 @@
 
-*
+*/
 !MP3Converter/
 !PriceNotify/
 !caosir/
+!GetAuctionData/
 !Template.pl
 !.gitignore
+
+Price.pl
+PriceNotify/priceresult.txt
+Temp.txt
+mpeReConfig.pl
+priceresult.txt
+test.txt
+
+
