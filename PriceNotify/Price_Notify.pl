@@ -44,7 +44,7 @@ sub LOG_FILE {
   my @pathAry = split('/', $fileName);
   my $tmpPath = "";
   for (my $i=0; $i<scalar(@pathAry)-1; $i++) {
-  	$tmpPath .= $pathAry[$i] . '/';   #D($tmpPath);
+    $tmpPath .= $pathAry[$i] . '/';   #D($tmpPath);
     mkdir($tmpPath, 0111) if (! -d $tmpPath);
   }
   if ($bAppData) {$fileName = " >> " . $fileName;  #append data
@@ -187,14 +187,14 @@ sub getSymbolPriceTable {
   while (<hFileHandle02>) {
     last if (m/<div class="share_buttons"/);
     if (m/<div id="article_content"/) {
-    	$bContentStart = $TRUE;
+      $bContentStart = $TRUE;
     }
     next if ($FALSE==$bContentStart || not m/=&gt;/ig);
-				
+        
     my $aLine = trim($_);
-		D("aLine is: $aLine");
-		next if ($aLine=~m/^#/ || $aLine=~m/^<p>#/);
-		
+    D("aLine is: $aLine");
+    next if ($aLine=~m/^#/ || $aLine=~m/^<p>#/);
+    
     $aLine =~ s/\s+//ig;
     my @stockCodeAry  = ($aLine =~ m/\&quot;(\d+_s[hz]\d{6})/ig);
     my @stockLimitAry = ($aLine =~ m/\&quot;([\d\s\.,]+\|[\d\s\.,]+\|[\d\s\.,]+)/ig); 
@@ -258,23 +258,42 @@ sub InstantPriceInfo {
 
   my ($url, $downloadFName) = ("http://60.28.2.66/list=", "./Temp/price_page.html");
   my ($code, $name, $latestP, $lastP, $openP, $highestP, $lowestP, $currTime) = ();
+  my ($vol1, $vol2, $vol3, $change) = ();
   my ($prevTime, $latestTime) = ("", "");
   my ($higherLimit, $lowerLimit, $costLimit) = ("", "", "");
   my $noDataTimes = 0;
-
+  my $usingMoney163 = 1;
+  
   getSymbolPriceTable(\%symbolPriceTbl);
   D(keys %symbolPriceTbl, values %symbolPriceTbl);
 
   while (1) {
     my $notifyStr = "";
-
-    $url = "http://60.28.2.66/list=";
+    my $delimeter = ";";
+    
+    if ($usingMoney163) {
+      $url = "http://data.quotes.money.163.com/?";
+      $delimeter = ";";
+    } else {
+      $url = "http://60.28.2.66/list=";
+      $delimeter = ",";
+    }
+    
     my @symbolAry = sort keys %symbolPriceTbl;
 
     for (my $i=0; $i<scalar(@symbolAry); $i++) {
       #$str = convToLetter($symbolAry[$i]);
-      $url .= substr($symbolAry[$i], index($symbolAry[$i], '_')+1);   #D($url);
-      $url .= "," if ($i<scalar(@symbolAry)-1);
+      my $stkName = substr($symbolAry[$i], index($symbolAry[$i], '_')+1);
+      if ($usingMoney163) {
+        if ($stkName=~m/^sz/) {
+          $url .= '1' . substr($stkName, 2);
+        } elsif ($stkName=~m/^sh/) {
+          $url .= '0' . substr($stkName, 2);
+        }
+      } else {
+        $url .= $stkName;   #D($url);
+      }
+      $url .= $delimeter if ($i<scalar(@symbolAry)-1);
 
       #($lowerLimit, $higherLimit) = ($symbolPriceTbl{$symbolAry[$i]}=~m/(.*)\|(.*)/ig);  #D($higherLimit, $lowerLimit);
     }
@@ -287,11 +306,18 @@ sub InstantPriceInfo {
     while (<hFileHandle01>)
     {
       die "Fail to download $url!\n" if (/500.+Internal Server Error/);
-      next if (!m/var hq_str_/ig);
+      next if (!m/var hq_str_/ig && !m/var quote_/ig);
 
       my $tmpStr = $_;  D($_);
-      ($code, $name, $openP, $lastP, $latestP, $highestP, $lowestP, $currTime)
-        = $tmpStr =~ m/var hq_str_(\S+)=\"([^,]+),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),.*,(\d+:\d{2}:\d{2})/i;
+      if ($usingMoney163) {
+        ($code, $name, $lastP, $openP, $vol1, $vol2, $vol3, $change, 
+         $highestP, $lowestP, $latestP, $currTime)
+          = $tmpStr =~ m/var quote_(\S+)=\'\d+;([^;]+);(\d+\.?\d*);(\d+\.?\d*);(\d+\.?\d*);(\d+\.?\d*);(\d+\.?\d*);(-?\d+\.?\d*);(\d+\.?\d*);(\d+\.?\d*);(\d+\.?\d*);.* (\d+:\d{2}:\d{2})/i;
+          
+      } else {
+        ($code, $name, $openP, $lastP, $latestP, $highestP, $lowestP, $currTime)
+          = $tmpStr =~ m/var hq_str_(\S+)=\"([^,]+),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),.*,(\d+:\d{2}:\d{2})/i;
+      }
       D($code, $latestP, $lastP, $openP, $highestP, $lowestP, $currTime);
 
       #P($currTime, $prevTime);
@@ -299,22 +325,24 @@ sub InstantPriceInfo {
       if ($currTime le $prevTime)   #earlier or equal to the $prevTime
       #if (0)  #hemerr
       {
+        D("$currTime is LE $prevTime");
         last;
       }
       $latestTime = $currTime if ($currTime ge $latestTime);
 
       my $prefix=1;
-      if (defined $code) {
-        while ($prefix < 50) {
-          my $newCode = "$prefix\_$code";  #D($newCode);
-          if (exists $symbolPriceTbl{$newCode}) {
-            $code = "$prefix\_$code";  #D($code);  #exit 1;
-            last;
-          }
-          $prefix++;
-        }
-      }
-
+#      if (defined $code) {
+#        while ($prefix < 50) {
+#          my $newCode = "$prefix\_$code";  #D($newCode);
+#          if (exists $symbolPriceTbl{$newCode}) {
+#            $code = "$prefix\_$code";  #D($code);  #exit 1;
+#            last;
+#          }
+#          $prefix++;
+#        }
+#      }
+      D("$code\t$prefix");
+      
       if (defined $code && $prefix<50) {
         #printf("%s(%s%s):  \tLA-%.2f  LO-%.2f  HI-%.2f  UP-%.2f\n", convToLetter($code), substr($name, 0, 2), substr($name, 4, 2), $latestP, $lowestP, $highestP, ($latestP/$openP-1)*100 );
         my $stkName = substr($name, 2, 4);
@@ -329,6 +357,7 @@ sub InstantPriceInfo {
         $notifyStr .= $tmpStr;
 
         #D($symbolPriceTbl{$code});
+if (0) {        
         ($lowerLimit, $higherLimit, $costLimit) = ($symbolPriceTbl{$code}=~m/^(.*)\|(.*)\|(.*)/ig);
         $costLimit = 999 if (not defined $costLimit);
         D("higherLimit: $higherLimit, lowerLimit: $lowerLimit, costLimit: $costLimit");
@@ -380,6 +409,7 @@ sub InstantPriceInfo {
           showAsyncMsgBox($msgStr, $code, \%symbolPriceTbl);
         }
       }
+}
     }#while (<hFileHandle01>)
     close(hFileHandle01);
 
