@@ -6,7 +6,7 @@ use strict;
 use diagnostics;
 
 use LWP::UserAgent;
-use Win32;
+#use Win32;
 use HTTP::Request;
 use Encode;
 
@@ -26,7 +26,7 @@ my @gStkCodeListAry = ();
 #*****************************AUXILIARY  FUNCTIONS****************************#
 sub DEBUG_INFO {
   return if (!$bDEBUG);
-  if (defined(@_)) {
+  if (@_) {
     print "@_\n";
   } else {
     print "Not Defined!\n";
@@ -255,7 +255,7 @@ sub InstantPriceInfo {
     );
 
   my ($url, $downloadFName) = ("http://60.28.2.66/list=", "./Temp/price_page.html");
-  my ($code, $name, $latestP, $lastP, $openP, $highestP, $lowestP, $currTime) = ();
+  my ($code, $name, $latestP, $lastP, $openP, $highestP, $lowestP, $currDate, $currTime) = ();
   my ($prevTime, $latestTime) = ("", "");
   my ($higherLimit, $lowerLimit, $costLimit) = ("", "", "");
   my $noDataTimes = 0;
@@ -287,8 +287,8 @@ sub InstantPriceInfo {
       next if (!m/var hq_str_/ig);
 
       my $tmpStr = $_;
-      ($code, $name, $openP, $lastP, $latestP, $highestP, $lowestP, $currTime)
-        = $tmpStr =~ m/var hq_str_(\S+)=\"([^,]+),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),.*,(\d+:\d{2}:\d{2})\"/i;
+      ($code, $name, $openP, $lastP, $latestP, $highestP, $lowestP, $currDate, $currTime)
+        = $tmpStr =~ m/var hq_str_(\S+)=\"([^,]+),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*),.*(\d{2}-\d{2}),(\d+:\d{2}:\d{2})/i;
       D($code, $latestP, $lastP, $openP, $highestP, $lowestP, $currTime);
 
       #P($currTime, $prevTime);
@@ -383,7 +383,7 @@ sub InstantPriceInfo {
     if ($latestTime gt $prevTime) {
       $prevTime = $latestTime;  #P("prevTime is: $prevTime");
       #$latestTime=~s/:/\//ig;
-      my $tmpStr = sprintf("\nTime: %s\n%s\n", $latestTime, '-' x 80);
+      my $tmpStr = sprintf("\nTime: %s %s\n%s\n", $currDate, $latestTime, '-' x 80);
       P($tmpStr);
 
       $notifyStr .= $tmpStr;
@@ -421,7 +421,7 @@ sub showAsyncMsgBox {
   } elsif ($pid == 0) {
     D("THE CHILD Thread\n");
 
-    $choice = Win32::MsgBox($msgStr, 48+5, "Notification_$notifCnt") if ($osVersion =~ /win32/i);
+    #$choice = Win32::MsgBox($msgStr, 48+5, "Notification_$notifCnt") if ($osVersion =~ /win32/i);
     D("The choice is $choice");
     if ($choice == 4) {  #4 -- retry
       #Do nothing, continue to watch on this stock
