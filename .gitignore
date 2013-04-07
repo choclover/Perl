@@ -4,6 +4,7 @@
 !PriceNotify/
 !caosir/
 !GetAuctionData/
+!AirasiaPrice/
 !Template.pl
 !.gitignore
 
@@ -13,5 +14,6 @@ Temp.txt
 mpeReConfig.pl
 priceresult.txt
 test.txt
+Temp.htm
 .svn
 
