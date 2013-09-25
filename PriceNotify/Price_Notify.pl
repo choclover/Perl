@@ -160,10 +160,10 @@ sub parse_args {
 
 sub getMarketType {
   my ($stkCode) = @_;
-  my $marketType = ($stkCode =~ m/^sh|^60/i) ? "sh"
-                 : ($stkCode =~ m/^sz|^00[01]|^399|^15/i) ? "sz"
-                 : ($stkCode =~ m/^002/)    ? "zx"
-                 : ($stkCode =~ m/^30/)     ? "cy"
+  my $marketType = ($stkCode =~ m/^sh|^60/i) ? "sh"              #ShangHai
+                 : ($stkCode =~ m/^sz|^00[01]|^399|^15/i) ? "sz" #ShenZhen
+                 : ($stkCode =~ m/^002/)    ? "zx"               #中小板
+                 : ($stkCode =~ m/^30/)     ? "cy"               #创业板
                  : "ot";
   return $marketType;
 }
@@ -349,7 +349,8 @@ sub InstantPriceInfo {
         #$stkName = encode("utf8", decode("gbk", $stkName) ) if ($osVersion !~ /win32/i);
 
         my $tmpStr = sprintf("%s(%s):\tUP:%-6.2f  LA:%-6.2f  LO:%-6.2f  HI:%-6.2f  \n",
-                             convToLetter(substr($code, index($code, '_')+3)),
+                             #convToLetter(substr($code, index($code, '_')+2)),
+							 substr($code, index($code, '_')+2),
                              $stkName,
                              ($latestP/$lastP-1)*100,
                              $latestP, $lowestP, $highestP,  );
