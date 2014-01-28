@@ -5,7 +5,10 @@
 !caosir/
 !GetAuctionData/
 !AirasiaPrice/
+
+!Test_Java/
 !Test_Python/
+
 !Template.pl
 !.gitignore
 
@@ -17,4 +20,6 @@ priceresult.txt
 test.txt
 Temp.htm
 .svn
+
+*.class
 
